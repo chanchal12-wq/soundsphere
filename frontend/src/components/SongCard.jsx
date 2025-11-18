@@ -14,7 +14,7 @@ import { QueueContext } from "../Context/QueueContex";
 
 //Importing icons
 import { SlOptionsVertical } from "react-icons/sl";
-import { MdDeleteOutline,MdOutlinePlaylistAdd,MdQueuePlayNext} from 'react-icons/md'
+import { MdDeleteOutline, MdOutlinePlaylistAdd, MdQueuePlayNext, MdPause, MdPlayArrow, MdStop, MdContentCut } from 'react-icons/md';
 import musicbg from "../assets/musicbg.jpg";
 
 
@@ -31,6 +31,7 @@ const SongCard = ({ title, artistName, songSrc, userId, songId, file }) => {
   if(token) {decoded = decodeToken(token)};
 
   const [showOptions, setShowOptions] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Display the options
   const displayOptions = () => {
@@ -45,7 +46,34 @@ const SongCard = ({ title, artistName, songSrc, userId, songId, file }) => {
     audio.src = `${__URL__}/api/v1/stream/${songSrc}`;
     audio.load();
     audio.play();
-    song.setIsPlaying(true)
+    song.setIsPlaying(true);
+    setIsPaused(false);
+  };
+
+  // Pause/Resume control
+  const handlePauseResume = () => {
+    if (audio.paused) {
+      audio.play();
+      setIsPaused(false);
+      song.setIsPlaying(true);
+    } else {
+      audio.pause();
+      setIsPaused(true);
+      song.setIsPlaying(false);
+    }
+  };
+
+  // Stop control
+  const handleStop = () => {
+    audio.pause();
+    audio.currentTime = 0;
+    setIsPaused(false);
+    song.setIsPlaying(false);
+  };
+
+  // Trim/Cut control (placeholder)
+  const handleTrim = () => {
+    alert('Trim/Cut feature coming soon!');
   };
 
   const headers = {
@@ -88,18 +116,20 @@ const SongCard = ({ title, artistName, songSrc, userId, songId, file }) => {
       </div>
 
       {/* <---------------------------Desktop Options-------------------------> */}
-      <div className="hidden lg:flex justify-start items-center p-2 space-x-5">
-            <button onClick={handleAddToPlaylist}><MdOutlinePlaylistAdd size={30}/></button>
-            <button><MdQueuePlayNext size={25}/></button>
-            {
-              // if user is the owner of the song then show the delete option
-              decoded == null ?<> </>:( decoded.id === userId)?(
-                <button onClick={handleDelete} className=" ">
-                  <MdDeleteOutline size={25}/>
-                </button>
-              ):(<></>)
-            }
-          </div>
+      <div className="hidden lg:flex justify-start items-center p-2 space-x-3">
+        <button onClick={handleAddToPlaylist} title="Add to Playlist"><MdOutlinePlaylistAdd size={28}/></button>
+        <button onClick={handlePlayNext} title="Play Next"><MdQueuePlayNext size={24}/></button>
+        <button onClick={handlePauseResume} title={isPaused ? 'Resume' : 'Pause'}>{isPaused ? <MdPlayArrow size={24}/> : <MdPause size={24}/>}</button>
+        <button onClick={handleStop} title="Stop"><MdStop size={24}/></button>
+        <button onClick={handleTrim} title="Trim/Cut"><MdContentCut size={22}/></button>
+        {
+          decoded == null ? null : (decoded.id === userId ? (
+            <button onClick={handleDelete} className=" " title="Delete">
+              <MdDeleteOutline size={24}/>
+            </button>
+          ) : null)
+        }
+      </div>
       {/* <---------------------------Mobile Options-------------------------> */}
       <div
         onClick={displayOptions}
@@ -109,17 +139,17 @@ const SongCard = ({ title, artistName, songSrc, userId, songId, file }) => {
         <SlOptionsVertical size={15} />
       </div>
       {showOptions && (
-        <div className="absolute right-0 z-10 w-36 bg-gray-900 ">
+        <div className="absolute right-0 z-10 w-40 bg-gray-900 rounded shadow-lg">
           <ul className="flex justify-start flex-col items-start space-y-2 p-2">
             <button onClick={handleAddToPlaylist}>Add to playlist</button>
-            <button onClick={handlePlayNext}>play next</button>
+            <button onClick={handlePlayNext}>Play next</button>
+            <button onClick={handlePauseResume}>{isPaused ? 'Resume' : 'Pause'}</button>
+            <button onClick={handleStop}>Stop</button>
+            <button onClick={handleTrim}>Trim/Cut</button>
             {
-              // if user is the owner of the song then show the delete option
-              decoded == null ?<> </>:( decoded.id === userId)?(
-                <button onClick={handleDelete} className=" ">
-                  Delete
-                </button>
-              ):(<></>)
+              decoded == null ? null : (decoded.id === userId ? (
+                <button onClick={handleDelete} className=" ">Delete</button>
+              ) : null)
             }
           </ul>
         </div>

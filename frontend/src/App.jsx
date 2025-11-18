@@ -11,6 +11,7 @@ import AudioPlayer from "./utils/AudioPlayer";
 import Register from "./pages/Register";
 import Playlist from "./pages/Playlist";
 import OTPVerification from "./pages/OTPVerification";
+import OtpVerifyPage from "./pages/OtpVerifyPage";
 
 //Importing Contexts
 import { SidebarContextState } from "./Context/SibebarContext";
@@ -80,6 +81,10 @@ const router = createBrowserRouter([
   {
     path: "/otp-verification",
     element: <OTPVerification />,
+  },
+  {
+    path: "/otp-verify",
+    element: <OtpVerifyPage />,
   },
 ]);
 

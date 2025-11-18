@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const OTPVerification = () => {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const otpInputs = [useRef(), useRef(), useRef(), useRef(), useRef(), useRef()];
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [step, setStep] = useState(1); // 1: Request OTP, 2: Verify OTP
@@ -49,16 +50,19 @@ const OTPVerification = () => {
     setError('');
     setSuccess('');
 
-    if (!otp || !password || !confirmPassword) {
+    const otpValue = otp.join('');
+    if (otpValue.length !== 6 || otp.some((d) => d === '')) {
+      setError('Please enter the 6-digit OTP');
+      return;
+    }
+    if (!password || !confirmPassword) {
       setError('Please fill all fields');
       return;
     }
-
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters');
       return;
@@ -68,9 +72,8 @@ const OTPVerification = () => {
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/v1/auth/verify-otp`,
-        { email, otp, password }
+        { email, otp: otpValue, password }
       );
-
       localStorage.setItem('token', response.data.token);
       setSuccess('Registration successful! Redirecting...');
       setTimeout(() => navigate('/home'), 2000);
@@ -127,7 +130,7 @@ const OTPVerification = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="w-full h-screen flex justify-center items-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <div className="w-full max-w-md">
         <div className="bg-slate-800 rounded-lg shadow-2xl p-8">
           <h1 className="text-3xl font-bold text-white mb-2">Music Platform</h1>
@@ -210,15 +213,39 @@ const OTPVerification = () => {
                 <label className="block text-gray-300 text-sm font-medium mb-2">
                   Enter OTP
                 </label>
-                <input
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.slice(0, 6))}
-                  maxLength="6"
-                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white text-center text-2xl tracking-widest placeholder-gray-400 focus:outline-none focus:border-purple-500"
-                  placeholder="000000"
-                  disabled={loading}
-                />
+                <div className="flex justify-center gap-2">
+                  {otp.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={otpInputs[idx]}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={e => {
+                        const val = e.target.value.replace(/[^0-9]/g, '');
+                        if (!val) return;
+                        const newOtp = [...otp];
+                        newOtp[idx] = val;
+                        setOtp(newOtp);
+                        if (idx < 5 && val) otpInputs[idx + 1].current.focus();
+                      }}
+                      onKeyDown={e => {
+                        if (e.key === 'Backspace') {
+                          if (otp[idx]) {
+                            const newOtp = [...otp];
+                            newOtp[idx] = '';
+                            setOtp(newOtp);
+                          } else if (idx > 0) {
+                            otpInputs[idx - 1].current.focus();
+                          }
+                        }
+                      }}
+                      className="w-12 h-12 text-2xl text-center bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-purple-500 transition-all"
+                      disabled={loading}
+                    />
+                  ))}
+                </div>
               </div>
 
               <div>
@@ -252,9 +279,9 @@ const OTPVerification = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-semibold py-2 rounded-lg transition duration-200"
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-400 text-white font-semibold py-2 rounded-lg transition duration-200 mt-2"
               >
-                {loading ? 'Verifying...' : 'Verify & Register'}
+                {loading ? 'Verifying...' : 'Continue'}
               </button>
 
               <div className="flex gap-2">
